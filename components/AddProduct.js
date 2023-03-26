@@ -58,7 +58,7 @@ const AddProductScreen = ({ navigation }) => {
         mode="outlined"
         label="Enter product name"
         right={<TextInput.Affix />}
-        keyboardType="phone-pad"
+        
       />
       <TextInput
         placeholder="Enter product description"
@@ -69,7 +69,7 @@ const AddProductScreen = ({ navigation }) => {
         mode="outlined"
         label="Enter product description"
         right={<TextInput.Affix />}
-        keyboardType="phone-pad"
+       
       />
       <TextInput
         placeholder="Enter product price"
@@ -102,7 +102,7 @@ const AddProductScreen = ({ navigation }) => {
         mode="outlined"
         label="Enter image URL"
         right={<TextInput.Affix />}
-        keyboardType="phone-pad"
+    
         
       />
       <Button title="Add product" onPress={handleAddProduct} />

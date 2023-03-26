@@ -164,7 +164,7 @@ const ViewScreen = ({ navigation }) => {
                 mode="outlined"
               label="Enter your address"
               right={<TextInput.Affix />}
-              keyboardType="phone-pad"
+              
               />
               <TextInput
                 style={styles.input}
