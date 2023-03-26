@@ -1,160 +1,199 @@
-import * as React from 'react';
-import { useState, useEffect  } from 'react';
-import { View, Text, TextInput,TouchableOpacity,StyleSheet,Button,Image,FlatList,Alert,KeyboardAvoidingView } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import * as ImagePicker from 'expo-image-picker';
+import * as React from "react";
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Button,
+  Image,
+  FlatList,
+  ScrollView,
+  Modal,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { TextInput, Avatar } from "react-native-paper";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+import AddProductScreen from "./components/AddProduct";
+import ViewScreen from "./components/ViewProductDealer";
+import OrderProductsList from "./components/CheckRequestFarmer";
+import viewacceptreject from "./components/OrderConfirmation";
+import ViewProductScreen from "./components/ViewProductFarmer";
 
 
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-
+let user = "";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-{/* For Register Code Here */}
+{
+  /* For Register Code Here */
+}
 function RegisterScreen({ navigation }) {
-  const [username, setUsername] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [aadharCard, setAadharCard] = useState('');
-  const [userType, setUserType] = useState('farmer');
-  const [password, setPassword] = useState('');
-  const [address, setAddress] = useState('');
+  const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [aadharCard, setAadharCard] = useState("");
+  const [userType, setUserType] = useState("farmer");
+  const [password, setPassword] = useState("");
+  const [address, setAddress] = useState("");
+
+  const userTypes = [
+    { label: "Farmer", value: "Farmer" },
+    { label: "Dealer", value: "Dealer" },
+  ];
+  const handleLog = async () => {
+    navigation.navigate("Login");
+  };
 
   const handleRegister = async () => {
+   
     try {
-      const userData = { username, phoneNumber, aadharCard, userType,password,address };
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      console.log("setItem called");
-      navigation.navigate('Login');
+      const userData = {
+        username,
+        phoneNumber,
+        aadharCard,
+        userType,
+        password,
+        address,
+      };
+      if(userType==="Farmer"){
+        await AsyncStorage.setItem("userDataFarmer", JSON.stringify(userData));
+      }
+      else{
+        await AsyncStorage.setItem("userDataDealer", JSON.stringify(userData));
+      }
+      
+      alert("Register Successful");
+      navigation.navigate("Login");
     } catch (error) {
-      console.log(error);
+      alert(error);
     }
   };
- 
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Register</Text>
+      <Avatar.Image size={100} source={require("./assets/logo.png")} />
+      <Text style={styles.heading}>Register</Text>
       <TextInput
+        style={styles.input}
+        mode="outlined"
+        label="Username"
+        right={<TextInput.Affix />}
         placeholder="Username"
         value={username}
-        style={styles.input}
         onChangeText={(text) => setUsername(text)}
       />
       <TextInput
-        placeholder="Phone Number"
-        value={phoneNumber}
         style={styles.input}
-        keyboardType='phone-pad'
+        mode="outlined"
+        label="Phone Number"
+        right={<TextInput.Affix />}
+        placeholder="Phone Number"
+        keyboardType="phone-pad"
+        value={phoneNumber}
         onChangeText={(text) => setPhoneNumber(text)}
       />
       <TextInput
-        placeholder="Aadhar Card"
-        value={aadharCard}
         style={styles.input}
-        keyboardType='numeric'
+        mode="outlined"
+        label="Aadhar Card Number"
+        placeholder="Aadhar Card Number"
+        keyboardType="number-pad"
+        value={aadharCard}
         onChangeText={(text) => setAadharCard(text)}
       />
-
-      <Picker
-        selectedValue={userType}
-        style={styles.picker}
-        onValueChange={(itemValue) => setUserType(itemValue)}
-      >
-        <Picker.Item label="Farmer" value="farmer" />
-        <Picker.Item label="Dealer" value="dealer" />
-      </Picker>
-
+      <View style={styles.pickerContainer}>
+        <Picker
+          style={styles.picker}
+          selectedValue={userType}
+          onValueChange={(value) => setUserType(value)}
+        >
+          <Picker.Item label="Select user type" value="" />
+          {userTypes.map((type) => (
+            <Picker.Item
+              key={type.value}
+              label={type.label}
+              value={type.value}
+            />
+          ))}
+        </Picker>
+      </View>
       <TextInput
-        placeholder="Password"
-        value={password}
         style={styles.input}
-        onChangeText={(text) => setPassword(text)}
+        mode="outlined"
+        label="Password"
+        placeholder="Password"
         secureTextEntry={true}
+        value={password}
+        onChangeText={(text) => setPassword(text)}
       />
-
-
       <TextInput
+        style={styles.input}
+        mode="outlined"
+        label="Address"
         placeholder="Address"
         value={address}
-        style={styles.input}
         onChangeText={(text) => setAddress(text)}
       />
-
-      <TouchableOpacity onPress={handleRegister} style={styles.buttonContainer}>
-        <Text style={styles.buttonText} >Register</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.buttonContainer}>
-        <Text style={styles.buttonText} >Go to Login</Text>
-      </TouchableOpacity>
-
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+        }}
+      >
+        <Button mode="outlined" title="Register" onPress={handleRegister} />
+      </View>
+      <View>
+        <TouchableOpacity onPress={handleLog}>
+          <Text style={{ color: "blue", padding: 10 }}>
+            {" "}
+            Already Register, Login
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    backgroundColor: '#f2f2f2'
-  },
-  header: {
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginBottom: 20
-  },
-  input: {
-    width: '80%',
-    height: 40,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#fff'
-  },
-  picker: {
-    width: '80%',
-    height: 40,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#fff'
-  },
-  buttonContainer: {
-    width: '80%',
-    height: 40,
-    borderRadius: 5,
-    backgroundColor: '#007bff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20
-  },
-  buttonText:{
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff'
-    }
-});
 
 
-{/* For Login Code Here */}
+{
+  /* For Login Code Here */
+}
 
 function LoginScreen({ navigation }) {
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [userType, setUserType] = useState("farmer");
+  const [password, setPassword] = useState("");
+  const userTypes = [
+    { label: "Farmer", value: "Farmer" },
+    { label: "Dealer", value: "Dealer" },
+  ];
 
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [userType, setUserType] = useState('farmer');
-  const [password, setPassword] = useState('');
+  async function clearAsyncStorage() {
+    try {
+      await AsyncStorage.clear();
+      alert('Async Storage cleared successfully.');
+    } catch (error) {
+      alert('Error clearing Async Storage: ', error.message);
+    }
+  }
 
   const handleLogin = async () => {
     try {
-      const userData = await AsyncStorage.getItem('userData');
+      let userData=[]
+      if(userType==="Farmer"){
+        userData = await AsyncStorage.getItem("userDataFarmer");
+      }
+      else{
+        userData = await AsyncStorage.getItem("userDataDealer");
+      }
+      
       if (userData !== null) {
         const parsedUserData = JSON.parse(userData);
         if (
@@ -162,115 +201,171 @@ function LoginScreen({ navigation }) {
           parsedUserData.userType === userType &&
           parsedUserData.password === password
         ) {
-          alert("Login Success")
-          //navigation.navigate('Home'); // navigate to home screen after successful login
+          user = userType;
+          navigation.navigate("Home"); // navigate to home screen after successful login
         } else {
-          console.log("show error message or handle incorrect login details")
-          alert("Login Failed")
+          alert("incorrect login details");
         }
       } else {
-        console.log("show error message or handle no user data found")
-       
+        alert("no user data found");
       }
     } catch (error) {
-      console.log(error);
+      alert(error);
     }
   };
 
   return (
-    <View style={styles_2.container}>
-      <Text style={styles_2.header}>Login</Text>
+    <View style={styles.container}>
+      <Avatar.Image size={100} source={require("./assets/logo.png")} />
+      <Text style={styles.heading}>Login</Text>
+
       <TextInput
+        style={styles.input}
+        mode="outlined"
+        label="Phone Number"
+        right={<TextInput.Affix />}
         placeholder="Phone Number"
+        keyboardType="phone-pad"
         value={phoneNumber}
-        style={styles_2.input}
         onChangeText={(text) => setPhoneNumber(text)}
       />
-        <TextInput
-        placeholder="Password"
-        value={password}
-        style={styles.input}
-        onChangeText={(text) => setPassword(text)}
-        secureTextEntry={true}
-      />
-
-      <View style={styles_2.pickerContainer}>
-        <Text style={styles_2.pickerLabel}>User Type:</Text>
+      <View style={styles.pickerContainer}>
         <Picker
+          style={styles.picker}
           selectedValue={userType}
-          style={styles_2.picker}
-          onValueChange={(itemValue) => setUserType(itemValue)}
+          onValueChange={(value) => setUserType(value)}
         >
-          <Picker.Item label="Farmer" value="farmer" />
-          <Picker.Item label="Dealer" value="dealer" />
+          <Picker.Item label="Select user type" value="" />
+          {userTypes.map((type) => (
+            <Picker.Item
+              key={type.value}
+              label={type.label}
+              value={type.value}
+            />
+          ))}
         </Picker>
       </View>
-
-      <TouchableOpacity onPress={handleLogin} style={styles_2.buttonContainer}>
-        <Text style={styles_2.buttonText}>Login</Text>
-      </TouchableOpacity>
+      <TextInput
+        style={styles.input}
+        mode="outlined"
+        label="Password"
+        placeholder="Password"
+        secureTextEntry={true}
+        value={password}
+        onChangeText={(text) => setPassword(text)}
+      />
+      <Button mode="outlined" title="Login" onPress={handleLogin} />
     </View>
   );
-};
+}
 
-const styles_2 = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff'
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  header: {
-    fontSize: 32,
+  heading: {
+    fontSize: 24,
+    marginBottom: 20,
+    color: "green",
     fontWeight: 'bold',
-    marginBottom: 32
   },
   input: {
-    width: '80%',
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 8,
-    marginVertical: 16
+    width: "100%",
+    marginBottom: 20,
   },
   pickerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
   },
   pickerLabel: {
-    fontSize: 18,
-    marginRight: 8
+    flex: 1,
   },
   picker: {
-    width: '60%',
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 5
+    flex: 2,
+    height: 50,
+    marginLeft: 10,
   },
-  buttonContainer: {
-    backgroundColor: '#007AFF',
-    borderRadius: 5,
-    padding: 12,
-    marginTop: 32
+  tabBar: {
+    backgroundColor: "#f7f7f7",
+    borderTopWidth: 0.5,
+    borderTopColor: "#d6d6d6",
   },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff'
-  }
+  label: {
+    fontSize: 16,
+    fontWeight: "bold",
+    borderTopColor: "#cccccc",
+  },
 });
 
-export default function App() {
+{
+  /* Home */
+}
+
+function HomeScreen({ navigation }) {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Register">
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
-   
+
+    <Tab.Navigator
+      tabBarOptions={{
+        activeTintColor: "#1a73e8",
+        inactiveTintColor: "#8f8f8f",
+        labelStyle: styles.label,
+        style: {
+          borderTopWidth: 1,
+          borderTopColor: "#cccccc",
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-evenly',
+        },
+      }}
+    >
+      {user === "Farmer" && (
+        <Tab.Screen name="Add Product" component={AddProductScreen} />
+      )}
+      {user === "Farmer" && (
+        <Tab.Screen name="View Products" component={ViewProductScreen} />
+      )}
+      {user === "Farmer" && (
+        <Tab.Screen name="Check Requests" component={OrderProductsList} />
+      )}
+
+      {user === "Dealer" && (
+        <Tab.Screen name="Farmers Products" component={ViewScreen} />
+      )}
+      {user === "Dealer" && (
+        <Tab.Screen name="Check Orders" component={viewacceptreject} />
+      )}
+    </Tab.Navigator>
   );
 }
 
 
+export default function App() {
+  return (
+    <NavigationContainer style={styles2.background}>
+      <Stack.Navigator initialRouteName="Register">
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="AddProductScreen" component={AddProductScreen} />
+        <Stack.Screen name="ViewProducts" component={ViewProductScreen} />
+        <Stack.Screen name="ViewDealer" component={ViewScreen} />
+        <Stack.Screen name="checkrequest" component={OrderProductsList} />
+        <Stack.Screen name="ViewAcceptReject" component={viewacceptreject} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+const styles2 = StyleSheet.create({
+  background: {
+    flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+});
