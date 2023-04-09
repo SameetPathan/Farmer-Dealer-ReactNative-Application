@@ -10,98 +10,231 @@ import {
   FlatList,
   ScrollView,
   Modal,
+  ImageBackground
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer,useRoute } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { TextInput, Avatar } from "react-native-paper";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { getDatabase, ref, onValue } from 'firebase/database';
+import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
+import { buyproduct, pay } from "../firebaseconfig";
 
-const viewacceptreject = () => {
-    const [orderProducts, setOrderProducts] = useState([]);
-  
+const ViewAcceptReject = ({ navigation }) => {
+
+    const route = useRoute();
+    const userphone = route.params.userphone;
+
+    const [products, setProducts] = useState([]);
+
+    const [buyModalVisible, setBuyModalVisible] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+   
     useEffect(() => {
-      const fetchOrderProducts = async () => {
-        try {
-          const orderProducts = JSON.parse(await AsyncStorage.getItem("orderproductslist"));
-          setOrderProducts(orderProducts);
-        } catch (error) {
-          console.error(error);
-        }
+      const dbb = getDatabase();
+  
+      const productRef = ref(dbb, 'products/');
+      const unsubscribe = onValue(productRef, (snapshot) => {
+        const ProductsData = snapshot.val();
+        const ProductsArray = ProductsData ? Object.entries(ProductsData).map(([id, product]) => ({ id, ...product }))
+        .filter(product => product.dealerphone === userphone)
+        : [];
+        setProducts(ProductsArray);
+      });
+  
+      return () => {
+        unsubscribe();
       };
-      fetchOrderProducts();
     }, []);
   
-    const renderItem = ({ item }) => (
-      <View style={styles.productContainer}>
-      <Image source={{ uri: item.imageurl }} style={styles.productImage} />
-        <Text style={{ fontWeight: "bold" }}>Product Name : {item.productName}</Text>
-        <Text>Orignal Price : {item.productPrice}</Text>
-        <Text>Description : {item.productDescription}</Text>
-        <Text>Status : {item.productbuyStatus}</Text>
-        <Text>AcceptedPrice: {item.buyerPrice}</Text>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+    const handlePay = async (item) => {
+      try {
+      
+        setBuyModalVisible(false);
+        let payed=true;
+        pay(item.id,payed)
+      
+      } catch (error) {
+       // console.error(error);
+        alert("Something went wrong. Please try again later.");
+      }
+    };
+  
+    const renderProduct = ({ item }) => (
+      <TouchableOpacity
+        style={styles.productContainer}
+        onPress={() => setSelectedProduct(item)}
+      >
+        <Image source={{ uri: item.imageurl }} style={styles.productImage} />
+        <View style={styles.productDetails}>
+          <Text style={styles.productName}>Product Name : {item.productName}</Text>
+          <Text style={styles.productPrice}>Product Owner : {item.whoadded}</Text>
+          <Text style={styles.productDescription}>Product Price Offered : {item.dealerprice}</Text>
+          <Text style={styles.productDescription}>Product Quantity Need : {item.quantiywant}</Text>
         </View>
-      </View>
+        {!item.paymentstatus ?
+          <TouchableOpacity
+            style={styles.buyButton}
+            onPress={() => setBuyModalVisible(true)}
+          >
+            <Text style={styles.buyButtonText}>Pay</Text>
+        </TouchableOpacity>:<Text style={styles.productDescription}>Payment Done</Text>
+        }
+       
+      </TouchableOpacity>
     );
   
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ImageBackground
+      source={require("../assets/bg.jpg")}
+      style={styles.backgroundImage}
+    >
+      <View style={styles.container}>
         <FlatList
-          data={orderProducts}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.productId.toString()}
+          data={products}
+          renderItem={renderProduct}
+          keyExtractor={(item) => item.id.toString()}
         />
-      </ScrollView>
+        {selectedProduct && (
+          <Modal visible={buyModalVisible} animationType="slide">
+            <View style={styles.modalContainer}>
+              <Image source={{ uri: selectedProduct.imageurl }} style={styles.productImage} />
+              <Text style={styles.modalTitle}>Product Name : {selectedProduct.productName}</Text>
+              <Text style={styles.modalDescription}>
+               Amount to Pay:  {selectedProduct.dealerprice}
+              </Text>
+            
+  
+               <View style={{ flexDirection: "row", justifyContent: "space-between",marginTop:10 }}>
+               {selectedProduct.orderstatus ==="accepted"?
+                  <TouchableOpacity
+                    style={{ backgroundColor: "green", padding: 10, borderRadius: 5 }}
+                    onPress={()=>{handlePay(selectedProduct)}}
+                  >
+                    <Text style={{ color: "white" }}>Pay</Text>
+                  </TouchableOpacity>: <Text style={styles.modalTitle}>Order Not Accepted yet</Text>
+                }
+                  <TouchableOpacity
+                    style={{ backgroundColor: "red", padding: 10, borderRadius: 5 }}
+                    onPress={() => setBuyModalVisible(false)}
+                  >
+                    <Text style={{ color: "white" }}>Cancel</Text>
+                  </TouchableOpacity>
+               </View>
+
+            </View>
+          </Modal>
+        )}
+      </View>
+      </ImageBackground>
     );
   };
-
-
+  
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#fff',
+      marginTop:30,
+      padding:20
     },
-    list: {
-      padding: 20,
+    backgroundImage: {
+      flex: 1,
+      resizeMode: "cover",
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      opacity: 1,
     },
     productContainer: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 4,
-      padding: 10,
-      marginBottom: 10,
-    },
-    productName: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 5,
+      flexDirection: "row",
+      backgroundColor: "#fff",
+      marginBottom:10,
+      alignItems: "center",
+      paddingTop:30,
+      justifyContent: "space-between",
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      padding:20,
+      borderBottomColor: "#ccc",
     },
     productImage: {
       width: 80,
       height: 80,
       borderRadius: 40,
     },
-    productDescription: {
-      marginBottom: 5,
+    productDetails: {
+      flex: 1,
+      paddingHorizontal: 10,
+    },
+    productName: {
+      fontSize: 16,
+      fontWeight: "bold",
     },
     productPrice: {
-      marginBottom: 5,
+      fontSize: 14,
+      color: "#777",
+      marginVertical: 5,
     },
-    productBuyStatus: {
-      marginBottom: 5,
+    productDescription: {
+      fontSize: 14,
+      color: "#555",
     },
-    productWhoAdded: {
-      marginBottom: 5,
+    buyButton: {
+      backgroundColor: "#3f8ae0",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 5,
     },
-    productImageUrl: {
-      marginBottom: 5,
+    buyButtonText: {
+      color: "#fff",
+      fontWeight: "bold",
     },
-    image: {
-      width: 200,
-      height: 200,
+    boughtButton: {
+      backgroundColor: "#ccc",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 5,
+    },
+    boughtButtonText: {
+      color: "#555",
+      fontWeight: "bold",
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: "#fff",
+      padding: 20,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 10,
+    },
+    modalPrice: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#3f8ae0",
+      marginBottom: 10,
+    },
+    input: {
+      width: "100%",
+      marginBottom: 20,
+    },
+    modalButtonContainer: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+    },
+    modalButton: {
+      backgroundColor: "#3f8ae0",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 5,
+      marginLeft: 10,
+    },
+    modalButtonText: {
+      color: "#fff",
+      fontWeight: "bold",
     },
   });
 
-export default viewacceptreject
+export default ViewAcceptReject

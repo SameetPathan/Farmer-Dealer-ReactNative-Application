@@ -4,165 +4,224 @@ import {
   View,
   Text,
   TouchableOpacity,
+  StyleSheet,
+  Button,
+  Image,
   FlatList,
   ScrollView,
-  Image,
-  StyleSheet,
-
+  Modal,
+  ImageBackground
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationContainer,useRoute  } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { TextInput, Avatar } from "react-native-paper";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { getDatabase, ref, onValue } from 'firebase/database';
+import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
+import { AcceptReject, buyproduct } from "../firebaseconfig";
 
+const OrderProductsList = ({ navigation }) => {
 
-const OrderProductsList = () => {
-    const [orderProducts, setOrderProducts] = useState([]);
+      const route = useRoute();
+      const userphone = route.params.userphone;
+    const [products, setProducts] = useState([]);
+
+    const [buyModalVisible, setBuyModalVisible] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [orderInfo, setOrderInfo] = useState({
+      phoneNumber: "",
+      address: "",
+      price: "",
+      quantity:"",
+    });
   
     useEffect(() => {
-      const fetchOrderProducts = async () => {
-        try {
-          const orderProducts = JSON.parse(await AsyncStorage.getItem("orderproductslist"));
-          setOrderProducts(orderProducts);
-        } catch (error) {
-          console.error(error);
-        }
+      const dbb = getDatabase();
+  
+      const productRef = ref(dbb, 'products/');
+      const unsubscribe = onValue(productRef, (snapshot) => {
+        const ProductsData = snapshot.val();
+        const ProductsArray = ProductsData ? Object.entries(ProductsData)
+        .map(([id, product]) => ({ id, ...product }))
+        .filter(product => product.orderplace === true)
+        .filter(product => product.whoadded === userphone)
+        : [];
+      
+        setProducts(ProductsArray);
+      });
+  
+      return () => {
+        unsubscribe();
       };
-      fetchOrderProducts();
     }, []);
+    const handleAccept = async(item)=>{
+      let fprice=item.productQuantity - item.quantiywant;
+      AcceptReject(item.id, fprice,'accepted');
+    }
+    const handleReject= async(item)=>{
+      AcceptReject(item.id,item.productQuantity,'rejected');
+    }
   
-    const renderItem = ({ item }) => (
-      <View style={styles.productContainer}>
+    
+  
+    const renderProduct = ({ item }) => (
+      <TouchableOpacity
+        style={styles.productContainer}
+        onPress={() => setSelectedProduct(item)}
+      >
         <Image source={{ uri: item.imageurl }} style={styles.productImage} />
-        <Text style={{ fontWeight: "bold" }}>Product Name : {item.productName}</Text>
-        <Text>Price : {item.productPrice}</Text>
-        <Text>Description : {item.productDescription}</Text>
-        <Text>Status : {item.productbuyStatus}</Text>
-        <Text>Dealer Phone Number : {item.buyerPhoneNumber}</Text>
-        <Text>Dealer Address : {item.buyerAddress}</Text>
-        <Text>Dealer Offered Price: {item.buyerPrice}</Text>
-        <View style={{ flexDirection: "row", justifyContent: "space-between",marginTop:10 }}>
-          <TouchableOpacity
-            style={{ backgroundColor: "green", padding: 10, borderRadius: 5 }}
-            onPress={() => handleAccept(item)}
-          >
-            <Text style={{ color: "white" }}>Accept</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ backgroundColor: "red", padding: 10, borderRadius: 5 }}
-            onPress={() => handleReject(item)}
-          >
-            <Text style={{ color: "white" }}>Reject</Text>
-          </TouchableOpacity>
+        <View style={styles.productDetails}>
+          <Text style={styles.productName}>Product Name : {item.productName}</Text>
+          <Text style={styles.productPrice}>Product Orginal Price Rs. {item.productPrice}</Text>
+          <Text style={styles.productDescription}>Product Orginal Quantity : {item.productQuantity}</Text>
+
+          <Text style={styles.productDescription}>Dealer Phone : {item.dealerphone}</Text>
+          <Text style={styles.productDescription}>Dealer Address : {item.dealeraddress}</Text>
+          <Text style={styles.productDescription}>Dealer Price : {item.dealerprice}</Text>
+          <Text style={styles.productDescription}>Quantiy Want : {item.quantiywant}</Text>
+          
+        { item.orderstatus ==="process"?
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
+            <TouchableOpacity
+              style={{ backgroundColor: "green", padding: 10, borderRadius: 5 }}
+              onPress={() => handleAccept(item)}
+            >
+              <Text style={{ color: "white" }}>Accept Order</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ backgroundColor: "red", padding: 10, borderRadius: 5 }}
+              onPress={() => handleReject(item)}
+            >
+              <Text style={{ color: "white" }}>Reject Order</Text>
+            </TouchableOpacity>
+          </View>:<Text style={styles.productDescription}>Order Already  : {item.orderstatus}</Text>}
         </View>
-      </View>
+        
+  
+      </TouchableOpacity>
     );
-  
-    const handleAccept = async (item) => {
-      try {
-        // update the buy status of the product to "Accepted"
-        const updatedOrderProducts = orderProducts.map((p) => {
-          if (p.productId === item.productId) {
-            p.productbuyStatus = "Accepted";
-          }
-          return p;
-        });
-  
-        // save the updated order products list to AsyncStorage
-        await AsyncStorage.setItem(
-          "orderproductslist",
-          JSON.stringify(updatedOrderProducts)
-        );
-  
-        // update the state to re-render the component
-        setOrderProducts(updatedOrderProducts);
-  
-        // show success message
-        alert("Success", "Product has been accepted.");
-      } catch (error) {
-        console.error(error);
-        alert("Error", "Something went wrong. Please try again later.");
-      }
-    };
-  
-    const handleReject = async (item) => {
-      try {
-        // update the buy status of the product to "Rejected"
-        const updatedOrderProducts = orderProducts.map((p) => {
-          if (p.productId === item.productId) {
-            p.productbuyStatus = "Rejected";
-          }
-          return p;
-        });
-  
-        // save the updated order products list to AsyncStorage
-        await AsyncStorage.setItem(
-          "orderproductslist",
-          JSON.stringify(updatedOrderProducts)
-        );
-  
-        // update the state to re-render the component
-        setOrderProducts(updatedOrderProducts);
-  
-        // show success message
-        alert("Success", "Product has been rejected.");
-      } catch (error) {
-        console.error(error);
-        alert("Error", "Something went wrong. Please try again later.");
-      }
-    };
   
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ImageBackground
+      source={require("../assets/bg.jpg")}
+      style={styles.backgroundImage}
+    >
+      <View style={styles.container}>
         <FlatList
-          data={orderProducts}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.productId.toString()}
+          data={products}
+          renderItem={renderProduct}
+          keyExtractor={(item) => item.id.toString()}
         />
-      </ScrollView>
+  
+      </View>
+      </ImageBackground>
     );
   };
-
+  
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#fff',
+      marginTop:30,
+      padding:20
     },
-    list: {
-      padding: 20,
+    backgroundImage: {
+      flex: 1,
+      resizeMode: "cover",
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      opacity: 1,
     },
     productContainer: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 4,
-      padding: 10,
-      marginBottom: 10,
-    },
-    productName: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 5,
-    },
-    productDescription: {
-      marginBottom: 5,
-    },
-    productPrice: {
-      marginBottom: 5,
-    },
-    productBuyStatus: {
-      marginBottom: 5,
-    },
-    productWhoAdded: {
-      marginBottom: 5,
-    },
-    productImageUrl: {
-      marginBottom: 5,
+      flexDirection: "row",
+      backgroundColor: "#fff",
+      marginBottom:10,
+      alignItems: "center",
+      paddingTop:30,
+      justifyContent: "space-between",
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      padding:20,
+      borderBottomColor: "#ccc",
     },
     productImage: {
       width: 80,
       height: 80,
       borderRadius: 40,
     },
-    image: {
-      width: 200,
-      height: 200,
+    productDetails: {
+      flex: 1,
+      paddingHorizontal: 10,
+    },
+    productName: {
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    productPrice: {
+      fontSize: 14,
+      color: "#777",
+      marginVertical: 5,
+    },
+    productDescription: {
+      fontSize: 14,
+      color: "#555",
+    },
+    buyButton: {
+      backgroundColor: "#3f8ae0",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 5,
+    },
+    buyButtonText: {
+      color: "#fff",
+      fontWeight: "bold",
+    },
+    boughtButton: {
+      backgroundColor: "#ccc",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 5,
+    },
+    boughtButtonText: {
+      color: "#555",
+      fontWeight: "bold",
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: "#fff",
+      padding: 20,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 10,
+    },
+    modalPrice: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#3f8ae0",
+      marginBottom: 10,
+    },
+    input: {
+      width: "100%",
+      marginBottom: 20,
+    },
+    modalButtonContainer: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+    },
+    modalButton: {
+      backgroundColor: "#3f8ae0",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 5,
+      marginLeft: 10,
+    },
+    modalButtonText: {
+      color: "#fff",
+      fontWeight: "bold",
     },
   });
 

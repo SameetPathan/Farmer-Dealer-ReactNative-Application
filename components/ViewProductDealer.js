@@ -10,6 +10,7 @@ import {
   FlatList,
   ScrollView,
   Modal,
+  ImageBackground
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,85 +18,58 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { TextInput, Avatar } from "react-native-paper";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { getDatabase, ref, onValue } from 'firebase/database';
+import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
+import { buyproduct } from "../firebaseconfig";
 
 const ViewScreen = ({ navigation }) => {
     const [products, setProducts] = useState([]);
+    const [searchText, setSearchText] = useState('');
+
     const [buyModalVisible, setBuyModalVisible] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [orderInfo, setOrderInfo] = useState({
       phoneNumber: "",
       address: "",
       price: "",
+      quantity:"",
     });
   
     useEffect(() => {
-      const fetchProducts = async () => {
-        try {
-          const products = JSON.parse(await AsyncStorage.getItem("products"));
-          setProducts(products);
-        } catch (error) {
-          console.error(error);
-        }
+      const dbb = getDatabase();
+  
+      const productRef = ref(dbb, 'products/');
+      const unsubscribe = onValue(productRef, (snapshot) => {
+        const ProductsData = snapshot.val();
+        const ProductsArray = ProductsData ? Object.entries(ProductsData).map(([id, product]) => ({ id, ...product })) : [];
+        setProducts(ProductsArray);
+      });
+  
+      return () => {
+        unsubscribe();
       };
-      fetchProducts();
     }, []);
+
+    const filteredProducts = products.filter(product => product.productName.toLowerCase().includes(searchText.toLowerCase()));
   
     const handleBuy = async () => {
       try {
         // get phone number, address and price from user input
-        const { phoneNumber, address, price } = orderInfo;
-  
-        // create a new order product object with relevant information
-        const orderProduct = {
-          productId: selectedProduct.id,
-          productName: selectedProduct.productName,
-          productDescription: selectedProduct.productDescription,
-          productPrice: selectedProduct.productPrice,
-          productbuyStatus: "Pending",
-          whoadded: selectedProduct.whoadded,
-          imageurl: selectedProduct.imageurl,
-          buyerPhoneNumber: phoneNumber,
-          buyerAddress: address,
-          buyerPrice: price,
-        };
-  
-        // get existing order products from AsyncStorage or initialize an empty array
-        let orderProducts = await AsyncStorage.getItem("orderproductslist");
-        orderProducts = orderProducts ? JSON.parse(orderProducts) : [];
-  
-        // add new order product to the list
-        orderProducts.push(orderProduct);
-  
-        // save the updated order products list to AsyncStorage
-        await AsyncStorage.setItem(
-          "orderproductslist",
-          JSON.stringify(orderProducts)
-        );
-  
-        // update the buy status of the product to "Pending"
-        const updatedProducts = products.map((p) => {
-          if (p.id === selectedProduct.id) {
-            p.productbuyStatus = "Pending";
-          }
-          return p;
-        });
-        await AsyncStorage.setItem("products", JSON.stringify(updatedProducts));
-  
+        const { phoneNumber, address, price,quantity } = orderInfo;
+        // hide the buy product modal
+        setBuyModalVisible(false);
+        buyproduct(selectedProduct.id,phoneNumber,address,price,quantity,"process",false)
         // reset orderInfo state
         setOrderInfo({
           phoneNumber: "",
           address: "",
           price: "",
+          quantity:"",
         });
-  
-        // hide the buy product modal
-        setBuyModalVisible(false);
-  
         // show success message
-        alert("Success", "Your order has been placed successfully.");
       } catch (error) {
-        console.error(error);
-        alert("Error", "Something went wrong. Please try again later.");
+       // console.error(error);
+        alert("Something went wrong. Please try again later.");
       }
     };
   
@@ -109,26 +83,38 @@ const ViewScreen = ({ navigation }) => {
           <Text style={styles.productName}>Product Name : {item.productName}</Text>
           <Text style={styles.productPrice}>Price Rs. {item.productPrice}</Text>
           <Text style={styles.productDescription}>Product Description : {item.productDescription}</Text>
+          <Text style={styles.productDescription}>Product Quantity : {item.productQuantity}</Text>
         </View>
-        {item.productbuyStatus === "Not Bought" ? (
           <TouchableOpacity
             style={styles.buyButton}
             onPress={() => setBuyModalVisible(true)}
           >
             <Text style={styles.buyButtonText}>Buy</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.boughtButton}>
-            <Text style={styles.boughtButtonText}>Bought</Text>
-          </View>
-        )}
+        </TouchableOpacity>
+       
       </TouchableOpacity>
     );
   
     return (
+      <ImageBackground
+      source={require("../assets/bg.jpg")}
+      style={styles.backgroundImage}
+    >
       <View style={styles.container}>
+
+      <TextInput
+          placeholder="Search products by name"
+          style={styles.inputt}
+          mode="outlined"
+          label="Search products by name"
+          right={<TextInput.Affix />}
+          onChangeText={text => setSearchText(text)}
+          value={searchText}
+          />
+
+
         <FlatList
-          data={products}
+          data={filteredProducts}
           renderItem={renderProduct}
           keyExtractor={(item) => item.id.toString()}
         />
@@ -143,6 +129,11 @@ const ViewScreen = ({ navigation }) => {
               <Text style={styles.modalDescription}>
                Product Description:  {selectedProduct.productDescription}
               </Text>
+              <Text style={styles.modalDescription}>
+               Product Available Quantity:  {selectedProduct.productQuantity}
+              </Text>
+
+             
               <TextInput
                 style={styles.input}
                 placeholder="Enter your phone number"
@@ -166,6 +157,19 @@ const ViewScreen = ({ navigation }) => {
               right={<TextInput.Affix />}
               
               />
+               <TextInput
+                style={styles.input}
+                placeholder="Enter your Quantity"
+                onChangeText={(text) =>
+                  setOrderInfo({ ...orderInfo, quantity: text })
+                }
+
+                mode="outlined"
+              label="Enter your Quantity"
+              right={<TextInput.Affix />}
+              keyboardType="phone-pad"
+              />
+
               <TextInput
                 style={styles.input}
                 placeholder="Enter the price you want to buy for"
@@ -198,21 +202,39 @@ const ViewScreen = ({ navigation }) => {
           </Modal>
         )}
       </View>
+      </ImageBackground>
     );
   };
   
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#fff",
-      padding: 20,
+      marginTop:30,
+      padding:20
+      
+    },
+    backgroundImage: {
+      flex: 1,
+      resizeMode: "cover",
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      opacity: 1,
+    },
+    inputt:{
+      marginBottom:5,
+      borderRadius:40,
     },
     productContainer: {
       flexDirection: "row",
+      backgroundColor: "#fff",
+      marginBottom:10,
       alignItems: "center",
+      paddingTop:30,
       justifyContent: "space-between",
       paddingVertical: 10,
       borderBottomWidth: 1,
+      padding:20,
       borderBottomColor: "#ccc",
     },
     productImage: {
