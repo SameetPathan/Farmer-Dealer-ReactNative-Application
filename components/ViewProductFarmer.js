@@ -22,7 +22,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
 import { deleteProduct } from "../firebaseconfig";
-import Carousel from 'react-native-snap-carousel';
+
 
 const ViewProductScreen = () => {
 
@@ -91,34 +91,7 @@ const ViewProductScreen = () => {
       style={styles.backgroundImage}
     >
 
-<View style={styles.container}>
-  <TextInput
-    placeholder="Search products by name"
-    style={styles.inputt}
-    mode="outlined"
-    label="Search products by name"
-    right={<TextInput.Affix />}
-    onChangeText={text => setSearchText(text)}
-    value={searchText}
-  />
 
-  {products.length ? (
-    <Carousel
-      data={filteredProducts}
-      renderItem={renderProduct}
-      sliderWidth={300} // Change this to match your desired width
-      itemWidth={200} // Change this to match your desired width
-      layout={'default'}
-      layoutCardOffset={18}
-      loop={true}
-      autoplay={true}
-      autoplayDelay={500}
-      autoplayInterval={3000}
-    />
-  ) : (
-    <Text>No products found!</Text>
-  )}
-</View>
       <View style={styles.container}>
 
           <TextInput
