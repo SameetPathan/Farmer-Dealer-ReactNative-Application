@@ -22,9 +22,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
 import { deleteProduct } from "../firebaseconfig";
+import { Header } from "react-native-elements";
 
-
-const ViewProductScreen = () => {
+const ViewProductScreen = ({ navigation }) => {
 
      const route = useRoute();
     const userphone = route.params.userphone;
@@ -44,10 +44,9 @@ const ViewProductScreen = () => {
         .map(([id, product]) => ({ id, ...product }))
         .filter(product => product.whoadded === userphone)
         : [];
-      
         setProducts(ProductsArray);
       });
-      });
+    });
 
       
 
@@ -62,6 +61,11 @@ const ViewProductScreen = () => {
     const deleteprod = async(item)=>{
       deleteProduct(item.id);
     }
+
+    const handleLogout = () => {
+      navigation.navigate("Login");
+    };
+  
   
     const renderProduct = ({ item }) => (
       <View
@@ -90,6 +94,12 @@ const ViewProductScreen = () => {
       source={require("../assets/bg.jpg")}
       style={styles.backgroundImage}
     >
+
+<Header
+        leftComponent={{ icon: "logout", color: "#fff", onPress: handleLogout }}
+        
+        backgroundColor="green"
+      />
 
 
       <View style={styles.container}>

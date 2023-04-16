@@ -21,6 +21,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
 import { buyproduct, pay } from "../firebaseconfig";
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Header } from "react-native-elements";
 
 const ViewAcceptReject = ({ navigation }) => {
 
@@ -48,6 +50,11 @@ const ViewAcceptReject = ({ navigation }) => {
         unsubscribe();
       };
     }, []);
+
+    const handleLogout = () => {
+      navigation.navigate("Login");
+    };
+  
   
     const handlePay = async (item) => {
       try {
@@ -67,6 +74,8 @@ const ViewAcceptReject = ({ navigation }) => {
         style={styles.productContainer}
         onPress={() => setSelectedProduct(item)}
       >
+
+
         <Image source={{ uri: item.imageurl }} style={styles.productImage} />
         <View style={styles.productDetails}>
           <Text style={styles.productName}>Product Name : {item.productName}</Text>
@@ -91,6 +100,13 @@ const ViewAcceptReject = ({ navigation }) => {
       source={require("../assets/bg.jpg")}
       style={styles.backgroundImage}
     >
+
+<Header
+        leftComponent={{ icon: "logout", color: "#fff", onPress: handleLogout }}
+        
+        backgroundColor="green"
+      />
+
       <View style={styles.container}>
         <FlatList
           data={products}
@@ -102,6 +118,7 @@ const ViewAcceptReject = ({ navigation }) => {
             <View style={styles.modalContainer}>
               <Image source={{ uri: selectedProduct.imageurl }} style={styles.productImage} />
               <Text style={styles.modalTitle}>Product Name : {selectedProduct.productName}</Text>
+              <Text style={styles.modalTitle}>Payment Number : {selectedProduct.whoadded}</Text>
               <Text style={styles.modalDescription}>
                Amount to Pay:  {selectedProduct.dealerprice}
               </Text>
@@ -109,12 +126,29 @@ const ViewAcceptReject = ({ navigation }) => {
   
                <View style={{ flexDirection: "row", justifyContent: "space-between",marginTop:10 }}>
                {selectedProduct.orderstatus ==="accepted"?
-                  <TouchableOpacity
-                    style={{ backgroundColor: "green", padding: 10, borderRadius: 5 }}
-                    onPress={()=>{handlePay(selectedProduct)}}
-                  >
-                    <Text style={{ color: "white" }}>Pay</Text>
-                  </TouchableOpacity>: <Text style={styles.modalTitle}>Order Not Accepted yet</Text>
+
+               <View>               <TouchableOpacity
+                        style={{ backgroundColor: 'green', padding: 10, borderRadius: 5,marginBottom:10 }}
+                        onPress={() => { handlePay(selectedProduct) }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Icon name="payment" size={20} color="white" />
+                          <Text style={{ color: 'white', marginLeft: 5 }}>Pay with Google Pay</Text>
+                        </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{ backgroundColor: 'green', padding: 10, borderRadius: 5 }}
+                        onPress={() => { handlePay(selectedProduct) }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Icon name="payment" size={20} color="white" />
+                          <Text style={{ color: 'white', marginLeft: 5 }}>Pay with PhonePe</Text>
+                        </View>
+                      </TouchableOpacity>
+                             </View>
+                      
+                      
+                      : <Text style={styles.modalTitle}>Order Not Accepted yet</Text>
                 }
                   <TouchableOpacity
                     style={{ backgroundColor: "red", padding: 10, borderRadius: 5 }}

@@ -21,8 +21,15 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
 import { buyproduct } from "../firebaseconfig";
+import { useRoute} from "@react-navigation/native";
+import { Header } from "react-native-elements";
 
 const ViewScreen = ({ navigation }) => {
+
+  const route = useRoute();
+    const userphone = route.params.userphone;
+   
+
     const [products, setProducts] = useState([]);
     const [searchText, setSearchText] = useState('');
 
@@ -36,6 +43,7 @@ const ViewScreen = ({ navigation }) => {
     });
   
     useEffect(() => {
+      
       const dbb = getDatabase();
   
       const productRef = ref(dbb, 'products/');
@@ -51,6 +59,10 @@ const ViewScreen = ({ navigation }) => {
     }, []);
 
     const filteredProducts = products.filter(product => product.productName.toLowerCase().includes(searchText.toLowerCase()));
+
+    const handleLogout = () => {
+      navigation.navigate("Login");
+    };
   
     const handleBuy = async () => {
       try {
@@ -58,7 +70,7 @@ const ViewScreen = ({ navigation }) => {
         const { phoneNumber, address, price,quantity } = orderInfo;
         // hide the buy product modal
         setBuyModalVisible(false);
-        buyproduct(selectedProduct.id,phoneNumber,address,price,quantity,"process",false)
+        buyproduct(selectedProduct.id,userphone,address,price,quantity,"process",false)
         // reset orderInfo state
         setOrderInfo({
           phoneNumber: "",
@@ -100,6 +112,12 @@ const ViewScreen = ({ navigation }) => {
       source={require("../assets/bg.jpg")}
       style={styles.backgroundImage}
     >
+
+<Header
+        leftComponent={{ icon: "logout", color: "#fff", onPress: handleLogout }}
+       
+        backgroundColor="green"
+      />
       <View style={styles.container}>
 
       <TextInput
@@ -140,11 +158,12 @@ const ViewScreen = ({ navigation }) => {
                 onChangeText={(text) =>
                   setOrderInfo({ ...orderInfo, phoneNumber: text })
                 }
-
+                value={userphone}
                 mode="outlined"
-              label="Enter your phone number"
-              right={<TextInput.Affix />}
-              keyboardType="phone-pad"
+                label="Enter your phone number"
+                right={<TextInput.Affix />}
+                keyboardType="phone-pad"
+                editable={false}
               />
               <TextInput
                 style={styles.input}
@@ -159,26 +178,26 @@ const ViewScreen = ({ navigation }) => {
               />
                <TextInput
                 style={styles.input}
-                placeholder="Enter your Quantity"
+                placeholder="Enter your Quantity in kg"
                 onChangeText={(text) =>
                   setOrderInfo({ ...orderInfo, quantity: text })
                 }
 
                 mode="outlined"
-              label="Enter your Quantity"
+              label="Enter your Quantity in kg"
               right={<TextInput.Affix />}
               keyboardType="phone-pad"
               />
 
               <TextInput
                 style={styles.input}
-                placeholder="Enter the price you want to buy for"
+                placeholder="Enter the price you want to buy for per kg"
                 onChangeText={(text) =>
                   setOrderInfo({ ...orderInfo, price: text })
                 }
 
                 mode="outlined"
-              label="Enter the price you want to buy for"
+              label="Enter the price you want to buy for per kg"
               right={<TextInput.Affix />}
               keyboardType="phone-pad"
               />

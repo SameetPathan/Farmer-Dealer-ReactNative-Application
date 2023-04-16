@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import 'firebase/storage';
 import { getStorage, ref, uploadBytes,getDownloadURL } from "firebase/storage";
 import { addproducts } from "../firebaseconfig";
+import { Header } from "react-native-elements";
 
 const AddProductScreen = ({ navigation }) => {
   const [productName, setProductName] = useState('');
@@ -64,6 +65,10 @@ const AddProductScreen = ({ navigation }) => {
     }
   };
 
+  const handleLogout = () => {
+    navigation.navigate("Login");
+  };
+
 
   async function uploadImageToFirebase(uri) {
     try {
@@ -79,9 +84,10 @@ const AddProductScreen = ({ navigation }) => {
       const snapshot = await uploadBytes(storageRef, blob, metadata);
       const downloadURL = await getDownloadURL(snapshot.ref);
       alert("Image Uploaded Successfully");  
-      const result = await addproducts(id, productName,productQuantity,productDescription, productPrice, userphone, downloadURL);    
+      const result = await addproducts(id, productName,productQuantity,productDescription, productPrice, userphone, downloadURL); 
+      setProductName("");setproductQuantity("");setProductDescription("");setProductPrice("");   
       return downloadURL;
-      setProductName("");setproductQuantity("");setProductDescription("");setProductPrice("");
+      
     } catch (error) {
       alert('Error uploading file:', error);
     
@@ -93,6 +99,11 @@ const AddProductScreen = ({ navigation }) => {
     source={require("../assets/bg.jpg")}
     style={styles.backgroundImage}
   >
+   <Header
+        leftComponent={{ icon: "logout", color: "#fff", onPress: handleLogout }}
+        
+        backgroundColor="green"
+      />
     <ScrollView contentContainerStyle={styles.container}>
 
   <Avatar.Image size={100} source={require("../assets/add.png")} />
@@ -109,13 +120,13 @@ const AddProductScreen = ({ navigation }) => {
         
       />
        <TextInput
-        placeholder="Enter product name"
+        placeholder="Enter product Quantity in kg"
         value={productQuantity}
         style={styles.input}
         onChangeText={setproductQuantity}
 
         mode="outlined"
-        label="Enter product Quantity"
+        label="Enter product Quantity in kg"
         right={<TextInput.Affix />}
         
       />
@@ -131,13 +142,13 @@ const AddProductScreen = ({ navigation }) => {
        
       />
       <TextInput
-        placeholder="Enter product price"
+        placeholder="Enter product price per/kg"
         value={productPrice}
         style={styles.input}
         onChangeText={setProductPrice}
 
         mode="outlined"
-        label="Enter product price"
+        label="Enter product price per/kg"
         right={<TextInput.Affix />}
         keyboardType="phone-pad"
       />
@@ -146,6 +157,7 @@ const AddProductScreen = ({ navigation }) => {
         value={userphone}
         style={styles.input}
         mode="outlined"
+        editable={false}
         label="Enter who added the product"
         right={<TextInput.Affix />}
         keyboardType="phone-pad"

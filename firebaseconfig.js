@@ -24,8 +24,6 @@ export function register(username, phoneNumber, aadharCard, userType, password, 
     onValue(userRef, (snapshot) => {
       const user = snapshot.val();
       if (user) {
-        alert('User Phone number already exists');
-        alert('Try Login using same phone Number');
       } else {
         set(userRef, {
           username: username,

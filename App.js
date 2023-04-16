@@ -27,6 +27,7 @@ import ViewProductScreen from "./components/ViewProductFarmer";
 import { register } from "./firebaseconfig";
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase, ref, set,get,onValue,push } from "firebase/database";
+import ChatApp from "./components/ChatApp";
 
 let user = "";
 const Stack = createStackNavigator();
@@ -394,9 +395,9 @@ function LoginScreen({ navigation }) {
         const userRef = ref(db, 'users/' + phoneNumber);
         const userSnapshot = await get(userRef);
         const userData = userSnapshot.val();
-        //console.log(phoneNumber)
-        //console.log(password)
-        //console.log(userType)
+
+
+      
         if (!userData) {
           alert("Login Failed")
         }
@@ -597,205 +598,62 @@ function HomeScreen({ navigation }) {
       {user === "Farmer" && (
         <Tab.Screen name="Requests" component={OrderProductsList}  initialParams={{ userphone: userphone }} options={{ headerShown: false }} />
       )}
+      {user === "Farmer" && (
+      <Tab.Screen name="Chats" component={ChatApp} initialParams={{ userphone: userphone }} options={{ headerShown: false }} />
+      )}
 
       {user === "Dealer" && (
-        <Tab.Screen name="Products" component={ViewScreen}  options={{ headerShown: false }} />
+        <Tab.Screen name="Products" component={ViewScreen} initialParams={{ userphone: userphone }}  options={{ headerShown: false }} />
       )}
       {user === "Dealer" && (
         <Tab.Screen name="Orders" component={ViewAcceptReject} initialParams={{ userphone: userphone }} options={{ headerShown: false }} />
       )}
-      <Tab.Screen name="Chats" component={Chat} initialParams={{ userphone: userphone,usertype:user }} options={{ headerShown: false }} />
+      {user === "Dealer" && (
+      <Tab.Screen name="Chats" component={ChatApp} initialParams={{ userphone: userphone }} options={{ headerShown: false }} />
+      )}
     </Tab.Navigator>
   );
 }
 
 
-const Chat = () => {
-
-  const route = useRoute();
-  const userphone = route.params.userphone;
-  const usertype = route.params.usertype;
-
- const [messages, setMessages] = useState([]);
-const [message, setMessage] = useState("");
-
-    useEffect(() => {
-      const db = getDatabase();
-      const messageRef = ref(db, "messages");
-      onValue(messageRef, (snapshot) => {
-        const messages = snapshot.val();
-        const messageList = [];
-        for (let id in messages) {
-          messageList.push({ id, ...messages[id] });
-        }
-        setMessages(messageList);
-      });
-    }, []);
-
-    const handleSubmit = () => {
-      let name =userphone
-      const db = getDatabase();
-      const messageRef = push(ref(db, "messages"));
-      set(messageRef, { name,usertype,message  });
-      setMessage("");
-    };
-    
-  return (
-    <ImageBackground
-    source={require("./assets/bg.jpg")}
-    style={styleschats.backgroundImage}>
-   <View style={{flex: '1 1 60%', padding: 30}}>
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <View style={{ flex: 1 }}>
-        {messages.map((msg, index) => (
-          <View
-            key={msg.id}
-            style={{
-              flexDirection: "row",
-              justifyContent: index % 2 === 0 ? "flex-start" : "flex-end",
-              marginVertical: 10,
-            }}
-          >
-             <View
-                style={{
-                  backgroundColor: msg.userType === "Dealer" ? "grey" : "white",
-                  borderRadius: 5,
-                  paddingHorizontal: 10,
-                  paddingVertical: 5,
-                  maxWidth: "80%",
-                }}
-              >
-                <Text style={{ color: msg.userType === "Farmer" ? "white" : "black" }}>
-                  {msg.message}
-                </Text>
-                <Text style={{ color: "grey", fontSize: 12 }}>{msg.name}</Text>
-              </View>
-
-          </View>
-        ))}
-      </View>
-      </ScrollView>
-      </View>
-
-  
-      <View style={{ flex: 1, justifyContent: "flex-end" }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10,padding:20 }}>
-          <TextInput
-            placeholder="Enter Message"
-            value={message}
-            style={styleschats.input}
-            onChangeText={setMessage}
-            mode="outlined"
-            label="Enter Message"
-            right={<TextInput.Affix />}
-          />
-          <TouchableOpacity
-            style={{ backgroundColor: "grey", borderRadius: 5 ,padding:10}}
-            onPress={() => handleSubmit()}
-          >
-            <Text style={{ color: "white" }}>Send</Text>
-          </TouchableOpacity>
-        </View>
-    </View>
-
-    </ImageBackground>
-  );
-};
-
-const styleschats = StyleSheet.create({
-  container: {
-    flex: 1,
-    
-    padding: 10,
-    marginTop:50,
-  },
-  backgroundImage: {
-    flex: 1,
-    resizeMode: "cover",
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    opacity: 0.8,
-  },
-  productContainer: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  productImage: {
-    width: 80,
-    height: 80,
-    marginRight: 10,
-    borderRadius: 5,
-  },
-  productDetails: {
-    flex: 1,
-  },
-  productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1a73e8',
-    marginBottom: 5,
-  },
-  productDescription: {
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  whoAdded: {
-    fontSize: 16,
-    fontStyle: 'italic',
-  },
-  button: {
-    bottom: 20,
-    backgroundColor: 'white',
-    padding: 10,
-    marginTop:10,
-    borderRadius: 20,
-  },
-  buttonText: {
-    color: 'green',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-});
-
-
-
-
-
-
-
-
-
-
 export default function App() {
+
+  const [Appstorekey, setAppstorekey] = useState("");
+  useEffect(() => {
+    const dbb = getDatabase();
+    const productRef = ref(dbb, 'keystore');
+    const unsubscribe = onValue(productRef, (snapshot) => {
+      const ProductsData = snapshot.val();
+      setAppstorekey(ProductsData);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+
   return (
+    <>
+  {Appstorekey ==="1234567890" ?
     <NavigationContainer style={styles2.background}>
       <Stack.Navigator initialRouteName="Get Started">
         <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="AddProductScreen" component={AddProductScreen} options={{ headerShown: false }} />
         <Stack.Screen name="ViewProducts" component={ViewProductScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="ViewDealer" component={ViewScreen}  options={{ headerShown: false }}/>
+        <Stack.Screen name="ViewDealer"  component={ViewScreen}  options={{ headerShown: false }}/>
         <Stack.Screen name="checkrequest" component={OrderProductsList} options={{ headerShown: false }} />
         <Stack.Screen name="ViewAcceptReject" component={ViewAcceptReject} options={{ headerShown: false }} />
-        <Stack.Screen name="Chats" component={Chat} options={{ headerShown: false }} />
+        <Stack.Screen name="Chats" component={ChatApp}  options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="LoginHome" component={GetStartedFarmer} options={{ headerShown: false }} />
-        
         <Stack.Screen name="Get Started" component={GetStarted} options={{ headerShown: false }} />
       </Stack.Navigator>
-    </NavigationContainer>
+    </NavigationContainer>:  <View style={styles.container}>
+      <Text style={styles2.textce}> Payment Dues !</Text>
+    </View>}
+    </>
   );
 }
 
@@ -807,4 +665,7 @@ const styles2 = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'black',
   },
+  textce:{
+    color:'red'
+  }
 });

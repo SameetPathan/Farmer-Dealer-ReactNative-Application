@@ -22,6 +22,8 @@ import { getDatabase, ref, onValue } from 'firebase/database';
 import { getStorage, uploadBytes,getDownloadURL } from "firebase/storage";
 import { AcceptReject, buyproduct } from "../firebaseconfig";
 
+import { Header } from "react-native-elements";
+ 
 const OrderProductsList = ({ navigation }) => {
 
       const route = useRoute();
@@ -36,6 +38,11 @@ const OrderProductsList = ({ navigation }) => {
       price: "",
       quantity:"",
     });
+
+    const handleLogout = () => {
+      navigation.navigate("Login");
+    };
+  
   
     useEffect(() => {
       const dbb = getDatabase();
@@ -79,8 +86,12 @@ const OrderProductsList = ({ navigation }) => {
 
           <Text style={styles.productDescription}>Dealer Phone : {item.dealerphone}</Text>
           <Text style={styles.productDescription}>Dealer Address : {item.dealeraddress}</Text>
-          <Text style={styles.productDescription}>Dealer Price : {item.dealerprice}</Text>
-          <Text style={styles.productDescription}>Quantiy Want : {item.quantiywant}</Text>
+          <Text style={styles.productDescription}>Dealer Price /kg : {item.dealerprice}</Text>
+          <Text style={styles.productDescription}>Quantiy Want in kg : {item.quantiywant}</Text>
+          {item.paymentstatus ?
+          <Text style={styles.productDescription}>Payment Status : Paid</Text>:
+          <Text style={styles.productDescription}>Payment Status : NA</Text>
+          }
           
         { item.orderstatus ==="process"?
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
@@ -108,6 +119,12 @@ const OrderProductsList = ({ navigation }) => {
       source={require("../assets/bg.jpg")}
       style={styles.backgroundImage}
     >
+     <Header
+        leftComponent={{ icon: "logout", color: "#fff", onPress: handleLogout }}
+        
+        backgroundColor="green"
+      />
+
       <View style={styles.container}>
         <FlatList
           data={products}
