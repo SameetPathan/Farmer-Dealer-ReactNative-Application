@@ -119,41 +119,28 @@ const ViewAcceptReject = ({ navigation }) => {
               <Image source={{ uri: selectedProduct.imageurl }} style={styles.productImage} />
               <Text style={styles.modalTitle}>Product Name : {selectedProduct.productName}</Text>
               <Text style={styles.modalTitle}>Payment Number : {selectedProduct.whoadded}</Text>
+              <Text style={styles.modalDescription}>Per Kg Price : {selectedProduct.dealerprice}</Text>
+              <Text style={styles.modalDescription}>Quantity : {selectedProduct.quantiywant}</Text>
               <Text style={styles.modalDescription}>
-               Amount to Pay:  {selectedProduct.dealerprice}
+               Amount to Pay:  {selectedProduct.dealerprice * selectedProduct.quantiywant}
               </Text>
             
   
                <View style={{ flexDirection: "row", justifyContent: "space-between",marginTop:10 }}>
                {selectedProduct.orderstatus ==="accepted"?
-
-               <View>               <TouchableOpacity
+                <TouchableOpacity
                         style={{ backgroundColor: 'green', padding: 10, borderRadius: 5,marginBottom:10 }}
-                        onPress={() => { handlePay(selectedProduct) }}
-                      >
+                        onPress={() => { handlePay(selectedProduct) }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                           <Icon name="payment" size={20} color="white" />
                           <Text style={{ color: 'white', marginLeft: 5 }}>Pay with Google Pay</Text>
                         </View>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={{ backgroundColor: 'green', padding: 10, borderRadius: 5 }}
-                        onPress={() => { handlePay(selectedProduct) }}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Icon name="payment" size={20} color="white" />
-                          <Text style={{ color: 'white', marginLeft: 5 }}>Pay with PhonePe</Text>
-                        </View>
-                      </TouchableOpacity>
-                             </View>
-                      
-                      
-                      : <Text style={styles.modalTitle}>Order Not Accepted yet</Text>
+                </TouchableOpacity>
+                : <Text style={styles.modalTitle}>Order Not Accepted yet</Text>
                 }
-                  <TouchableOpacity
+                <TouchableOpacity
                     style={{ backgroundColor: "red", padding: 10, borderRadius: 5 }}
-                    onPress={() => setBuyModalVisible(false)}
-                  >
+                    onPress={() => setBuyModalVisible(false)}>
                     <Text style={{ color: "white" }}>Cancel</Text>
                   </TouchableOpacity>
                </View>
